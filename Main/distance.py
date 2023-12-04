@@ -1,66 +1,54 @@
+from tkinter import filedialog
 from math import radians,cos,sin
+import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split
+#from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 
-def get_distance(lat1, lon1, lat2, lon2):
-    lat1_radians = radians(lat1)
-    lon1_radians = radians(lon1)
+# To make this code work we need a CSV file with the coordinates
 
-    lat2_radians = radians(lat2)
-    lon2_radians = radians(lon2)
+## This code only works if there are many coordinates ##
 
-    x1 = cos(lon1_radians)*cos(lat1_radians)*6371
-    y1 = cos(lon1_radians)*sin(lat1_radians)*6371
+def read_csv():
+    file = filedialog.askopenfilename()
 
-    x1_y1 = [x1, y1]
-    x1_y1 = np.asarray(x1_y1)
-    print("x1_y1: ", x1_y1)
+    return pd.read_csv(file, encoding='unicode_escape', sep=";")
 
-    x2 = cos(lon2_radians)*cos(lat2_radians)*6371
-    y2 = cos(lon2_radians)*sin(lat2_radians)*6371
+def get_distance():
+    cities = read_csv()
 
-    x2_y2 = [x2, y2]
-    x2_y2 = np.asarray(x2_y2)
-    print("x2_y2: ", x2_y2)
+    lat = cities["Latitude"].map(radians)
+    lon = cities["Longitude"].map(radians)
+    x = lon.map(cos)*lat.map(cos)*6371 #6371 = earth radius in km
+    y= lon.map(cos)*lat.map(sin)*6371 
 
-    x_y_concatenate = [x1_y1, x2_y2]
-    x_y_concatenate = np.asarray(x_y_concatenate)
-    print("concatenate: ", x_y_concatenate)
+    cities["lat_radians"] = lat
+    cities["lon_radians"] = lon
+    cities["x"] = x
+    cities["y"] = y
+    cities.head()
 
-    scaler = MinMaxScaler()
-    scaled_df_x_y = scaler.fit_transform(x_y_concatenate)
-    print("scaled_x_y: ", scaled_df_x_y)
+    print("x: ", x)
+    print("y: ", y)
 
-    # x1_train, y1_train = train_test_split(x1_y1, test_size=0.2)
-    # print("train_x1", x1_train)
-    # print("train_y1", y1_train)
-    # x2_train, y2_train = train_test_split(x2_y2, test_size=0.2)
-    # print("train_x2", x2_train)
-    # print("train_y2", y2_train)
+    cities_drop = cities.drop(["Latitude", "Longitude", "lat_radians", "lon_radians"], axis = 1)
+    cities_drop.head()
 
-    # x1_y1_train = [x1_train, y1_train]
-    # x1_y1_train = np.asarray(x1_y1_train)
-    # print("x1_y1_train", x1_y1_train)
+    print("cities: ", cities_drop)
 
-    # x2_y2_train = [x2_train, y2_train]
-    # x2_y2_train = np.asarray(x2_y2_train)
-    # print("x2_y2_train", x2_y2_train)
+    df = cities_drop.copy()
 
-    # x_y_concatenate = np.concatenate((x1_y1_train, x2_y2_train), axis = 1)
-    # print("concatenate: ", x_y_concatenate)
+    scaler = MinMaxScaler(feature_range=(0, 2), copy=True)
+    scaled_df = scaler.fit_transform(df)
+    print("scaled_df_1: ", scaled_df)
+    scaled_df = pd.DataFrame(scaled_df, columns=['x1', 'x2'])
+    print("scaled_df: ", scaled_df)
 
-    # scaler = MinMaxScaler(feature_range=(0, 100), copy=True)
-    # scaled_df_x_y = scaler.fit_transform(x_y_concatenate)
-    # print("scaled_x_y: ", scaled_df_x_y)
+get_distance()
 
-    # scaled_df_x2_y2 = scaler.fit_transform(x2_y2_train)
-    # print("scaled_x2: ", scaled_df_x2_y2[0:5])
+# lat1 = 43.37012643
+# lon1 = -8.39114853
+# lat2 = 38.99588053
+# lon2 = -1.85574745
 
-
-lat1 = 43.37012643
-lon1 = -8.39114853
-lat2 = 38.99588053
-lon2 = -1.85574745
-
-get_distance(lat1, lon1, lat2, lon2)
+# get_distance(lat1, lon1, lat2, lon2)
